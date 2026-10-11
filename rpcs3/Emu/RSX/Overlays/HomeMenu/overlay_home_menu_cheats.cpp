@@ -69,9 +69,27 @@ namespace rsx
 			}
 			else
 			{
-				add_item(home_menu::fa_icon::none, "Saved as you toggle. Takes effect after Restart.", [](pad_button) -> page_navigation
+				// Patches are written into the guest image when a module is loaded, and there is no
+				// way to undo that in a process that is already running -- patch_engine::unload()
+				// frees scratch memory, it does not put the original bytes back. A toggle can only
+				// take effect on the next boot, so this line is worth pressing, not just reading.
+				add_item(home_menu::fa_icon::restart, "Restart the game to apply the changes", [](pad_button btn) -> page_navigation
 				{
-					return page_navigation::stay;
+					if (btn != pad_button::cross)
+					{
+						return page_navigation::stay;
+					}
+
+					rsx_log.notice("User selected restart from the cheats page");
+
+					Emu.CallFromMainThread([]()
+					{
+						// Keep the window open across the guest's reboot, as the main menu does.
+						Emu.SetContinuousMode(true);
+						Emu.Restart(true);
+					});
+
+					return page_navigation::exit;
 				});
 
 				for (usz i = 0; i < m_cheats.size(); i++)
