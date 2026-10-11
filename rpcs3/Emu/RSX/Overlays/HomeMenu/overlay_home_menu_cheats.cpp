@@ -141,6 +141,52 @@ namespace rsx
 			{
 				return a.description < b.description;
 			});
+
+			// Re-read the enable flags from the file. The engine's map is deliberately frozen
+			// for the session (bin_patch.h: get_loaded_patches() is read-only on purpose), so
+			// its flags are the ones loaded at boot -- toggling writes the file and nothing
+			// else. Redrawing from the engine map therefore flipped every switch the user had
+			// just moved back to its pre-toggle state on the next visit, which reads exactly
+			// like "the cheats did not save". The file is what a toggle changed and what the
+			// next boot will read, so it is the honest thing to display.
+			const patch_engine::patch_map config = patch_engine::load_config();
+
+			for (entry& e : m_cheats)
+			{
+				// save_config() writes only the entries that are enabled, so an entry absent
+				// from the file is disabled -- that absence is the "off" state, not a miss.
+				e.enabled = false;
+
+				auto container = config.find(e.hash);
+				if (container == config.end())
+				{
+					continue;
+				}
+
+				auto patch = container->second.patch_info_map.find(e.description);
+				if (patch == container->second.patch_info_map.end())
+				{
+					continue;
+				}
+
+				auto title = patch->second.titles.find(e.title);
+				if (title == patch->second.titles.end())
+				{
+					continue;
+				}
+
+				auto serial = title->second.find(e.serial);
+				if (serial == title->second.end())
+				{
+					continue;
+				}
+
+				auto version = serial->second.find(e.app_version);
+				if (version != serial->second.end())
+				{
+					e.enabled = version->second.enabled;
+				}
+			}
 		}
 
 		void home_menu_cheats::add_row(usz index, u16 width)
