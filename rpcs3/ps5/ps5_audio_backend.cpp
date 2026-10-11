@@ -170,16 +170,20 @@ void ps5_audio_backend::MeterGrain(u32 bytes)
 	if (++m_meter_grains >= 1024)
 	{
 		// Speak up only when something is wrong. A healthy stream logs nothing: a line every
-		// 5.5 s for the whole session would bury whatever else the log is being read for. One
-		// window of unbroken digital silence while playing is the symptom worth reporting, and
-		// the recovery line says when it ends.
+		// 5.5 s for the whole session would bury whatever else the log is being read for. So
+		// report the *change*: one line when a playing port goes silent, one when it recovers.
+		// Re-reporting each window of the same silence said nothing new and turned any quiet
+		// stretch -- a menu, a loading screen, a paused game -- into a line every 5.5 s.
 		const bool all_silent = m_meter_silent_grains == m_meter_grains;
 
 		if (all_silent && m_playing)
 		{
-			ps5_audio_log.error("Audio level: digital silence for %u grains (%u ms) while playing, port=%d. "
-				"The console is being handed silence, so the fault is upstream of SceAudioOut.",
-				m_meter_grains, m_meter_grains * 1000 * 256 / 48000, m_port);
+			if (!m_meter_reported_silence)
+			{
+				ps5_audio_log.error("Audio level: digital silence for %u grains (%u ms) while playing, port=%d. "
+					"The console is being handed silence, so the fault is upstream of SceAudioOut.",
+					m_meter_grains, m_meter_grains * 1000 * 256 / 48000, m_port);
+			}
 		}
 		else if (!all_silent && m_meter_reported_silence)
 		{
