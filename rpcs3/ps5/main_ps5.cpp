@@ -261,7 +261,19 @@ namespace
 		{
 			Emu.BlockingCallFromMainThread([]()
 			{
-				Emulator::SaveSettings(g_cfg.to_string(), Emu.GetTitleID());
+				const std::string title_id = Emu.GetTitleID();
+
+				// A game boots in custom-config mode, so SaveSettings() routes the write to
+				// <config>/custom_configs/config_<TITLEID>.yml rather than to config.yml. On
+				// desktop the Qt settings dialog creates that directory
+				// (emu_settings::LoadSettings), and fs::file::open() does not create parents,
+				// so on PS5 this save failed with ENOENT and the setting was silently lost.
+				if (!title_id.empty())
+				{
+					fs::create_path(rpcs3::utils::get_custom_config_dir());
+				}
+
+				Emulator::SaveSettings(g_cfg.to_string(), title_id);
 			});
 		};
 
