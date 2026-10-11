@@ -2,6 +2,7 @@
 
 #include "util/types.hpp"
 
+#include <cstdlib>
 #include <string>
 
 namespace fmt
@@ -394,7 +395,11 @@ namespace fmt
 		}
 
 #if !defined(_MSC_VER) || defined(__clang__)
-		[[noreturn]] ~throw_exception() = default;
+		// Clang does not propagate [[noreturn]] from this constructor, so it models the
+		// temporary as constructed and then destroyed: the destructor is what terminates
+		// the control path. A defaulted destructor is trivial and silently drops the
+		// attribute, which makes -Werror=return-type fire on every caller's switch.
+		[[noreturn]] ~throw_exception() { std::abort(); }
 #endif
 	};
 
