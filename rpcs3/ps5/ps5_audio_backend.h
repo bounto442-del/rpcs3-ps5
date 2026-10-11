@@ -35,5 +35,13 @@ private:
 	std::unique_ptr<named_thread<std::function<void()>>> m_thread;
 	atomic_t<bool> m_stop{false};
 
+	// Level meter over the grains handed to the port. Silent while audio is flowing; one error
+	// line per 1024 grains (~5.5 s) of unbroken digital silence, and one notice when it ends.
+	u32 m_meter_grains = 0;
+	u32 m_meter_silent_grains = 0;
+	f32 m_meter_peak = 0.0f;
+	bool m_meter_reported_silence = false;
+
 	void output_loop();
+	void MeterGrain(u32 bytes);
 };
