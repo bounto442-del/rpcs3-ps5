@@ -124,7 +124,7 @@ public:
 
 	using patch_app_versions = std::unordered_map<std::string /*app_version*/, patch_config_values>;
 	using patch_serials = std::unordered_map<std::string /*serial*/, patch_app_versions>;
-	using patch_titles = std::unordered_map<std::string /*serial*/, patch_serials>;
+	using patch_titles = std::unordered_map<std::string /*game title*/, patch_serials>;
 
 	struct patch_info
 	{
@@ -219,6 +219,11 @@ public:
 
 	// Deallocate memory used by patches
 	void unload(const std::string& name);
+
+	// The loaded patch database, for the native overlay cheat page (there is no Qt on PS5).
+	// Read-only on purpose: the page keeps its own copy of the enable flags and writes them
+	// back through load_config()/save_config(), so nothing here mutates under the emulator.
+	const patch_map& get_loaded_patches() const { return m_map; }
 
 private:
 	// Database

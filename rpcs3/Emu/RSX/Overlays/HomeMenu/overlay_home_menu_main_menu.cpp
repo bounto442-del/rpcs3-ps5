@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "overlay_home_menu_main_menu.h"
 #include "overlay_home_menu_components.h"
+#include "overlay_home_menu_cheats.h"
 #include "overlay_home_menu_settings.h"
 #include "overlay_home_menu_savestate.h"
 #include "Emu/RSX/Overlays/FriendsList/overlay_friends_list_dialog.h"
@@ -34,6 +35,11 @@ namespace rsx
 			});
 
 			add_page(home_menu::fa_icon::settings, std::make_shared<home_menu_settings>(x, y, width, height, use_separators, this));
+
+			// The title's patches, toggled from the pad. Present even when the list is empty --
+			// the page itself says so, which is less confusing than the entry appearing and
+			// disappearing depending on what happens to be in patches/.
+			add_page(home_menu::fa_icon::settings_sliders, std::make_shared<home_menu_cheats>(x, y, width, height, use_separators, this));
 
 			if (rsx::overlays::friends_list_dialog::rpcn_configured())
 			{
