@@ -11,6 +11,7 @@
 #include "ps5_dialogs.h"
 #include "ps5_firmware.h"
 #include "ps5_frame.h"
+#include "ps5_hen_jailbreak.h"
 #include "ps5_pad_handler.h"
 #include "ps5_sce.h"
 
@@ -585,6 +586,10 @@ int main(int /*argc*/, char** /*argv*/)
 
 	// Files the title writes under /data stay editable over FTP (another user)
 	::umask(0);
+
+	// Ask the HEN helper to lift the app sandbox before anything below touches /data: until
+	// it does, /data is the sandbox's own, with none of the firmware, games or config in it.
+	ps5::request_jailbreak();
 
 	// RPCS3 opens some resources by relative path (Icons/ui/...): they are beside the eboot
 	::chdir("/app0/");
