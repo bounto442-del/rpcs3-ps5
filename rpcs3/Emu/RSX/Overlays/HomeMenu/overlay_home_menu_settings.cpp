@@ -61,15 +61,29 @@ namespace rsx
 
 		page_navigation home_menu_settings::handle_button_press(pad_button button_press, bool is_auto_repeat, u64 auto_repeat_interval_ms)
 		{
-			if (!m_tabs->is_in_selection_mode())
+			// Square and Triangle are the Save and Discard keys, and the prompt they answer belongs
+			// to the page inside the tab: each settings page is created with a null parent, so it
+			// owns its own m_config_changed, and tabbed_container::get_compiled() draws that page
+			// whether or not the tab list is up. Backing out of a tab with Circle therefore lands on
+			// the tab list with the page's Save button still on screen -- and the switch below has
+			// no case for either button in selection mode, so both presses were dropped there and
+			// the visible Save button did nothing. Delegate to the page instead, in either mode.
+			const bool in_selection_mode = m_tabs->is_in_selection_mode();
+
+			if (!in_selection_mode || button_press == pad_button::square || button_press == pad_button::triangle)
 			{
 				auto page = ensure(dynamic_cast<home_menu_page*>(m_tabs->get_selected()));
 				const auto nav_action = page->handle_button_press(button_press, is_auto_repeat, auto_repeat_interval_ms);
 				switch (nav_action)
 				{
 				case page_navigation::exit:
-					m_tabs->toggle_selection_mode();
-					page->on_deactivate();
+					// Only a press that was handled from inside the tab leaves it. A page that
+					// reports exit while the tab list is already up must not toggle the list away.
+					if (!in_selection_mode)
+					{
+						m_tabs->toggle_selection_mode();
+						page->on_deactivate();
+					}
 					return page_navigation::stay;
 				default:
 					return nav_action;
